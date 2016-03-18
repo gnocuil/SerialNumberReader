@@ -1,13 +1,15 @@
-import Image
+import Image, ImageFilter
 import codecs
 import Queue
 import string,os,sys
-from pytesser import *
+import subprocess
 
-threshold = 160
+#threshold = 160 #ios
+threshold = 110 #android
 dx=[0,1,0,-1]
 dy=[1,0,-1,0]
 exe='C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe'
+div=2
 
 def roll(image, delta):
     xsize, ysize = image.size
@@ -24,9 +26,11 @@ def roll(image, delta):
 
 def ocr(filename):
     print exe
-    args = [exe, filename, 'out','-psm 7']
-    proc = subprocess.Popen(args)
+    args = [exe, filename, 'out','-psm 7', 'pattern.txt']
+    FNULL = open(os.devnull, 'w')
+    proc = subprocess.Popen(args,stdout=FNULL, stderr=subprocess.STDOUT)
     retcode = proc.wait()
+    FNULL.close()
     if retcode!=0:
         return ''
     f=open("out.txt", "r")
@@ -37,11 +41,13 @@ def readImage(filename):
     im = Image.open(filename)
     prefix=os.path.splitext(filename)[0]
     print prefix
-    im=im.rotate(270)#TODO
     w,h=im.size
-    im=im.resize((w/2, h/2),Image.ANTIALIAS)
+    if w>h:
+        im=im.rotate(270)#TODO
     w,h=im.size
-    region = (w/6,h/2,w-1,h*3/4)
+    if div>1: im=im.resize((w/div, h/div),Image.ANTIALIAS)
+    w,h=im.size
+    region = (w/6,h/3,w-1,h*3/4)
     im=im.crop(region)
     
     Lim = im.convert('L')
@@ -56,8 +62,8 @@ def readImage(filename):
 
     bim = Lim.point(table, '1')
     bim.save('fun_binary.jpg')
-    
-    f=codecs.open("debug.txt", "w", 'utf-8')
+    #return ''
+    #f=codecs.open("debug.txt", "w", 'utf-8')
     w,h=bim.size
     print w,h
     pix=bim.load()
@@ -92,7 +98,7 @@ def readImage(filename):
                             q.put((y2,x2))
                             pix[y2,x2]=1
                 area=(xmax-xmin+1)*(ymax-ymin+1)
-                print >>f,ymin,ymax,xmin,xmax,area,cnt
+                #print >>f,ymin,ymax,xmin,xmax,area,cnt
                 if area>cnt*6 and area>best:
                     best=area
                     w1=ymin
@@ -100,21 +106,26 @@ def readImage(filename):
                     h1=xmin
                     h2=xmax
     print best,w1,w2,h1,h2
-    f.close()
-    bim = Lim.point(table, '1')
+    #f.close()
+    #bim = Lim.point(table, '1')
+    bim=Lim
     if best>0:
         w=w2-w1
         h=h2-h1
-        region = (w1+w/8,h1+h/6,w2-w/8,h2-h/6)
+        region = (w1+w/8,h1+h/5,w2-w/8,h2-h/6)
         tim=bim.crop(region)
+        #tim.point(table, '1').show()
+        #tim = tim.filter(ImageFilter.FIND_EDGES)  
+        tim=tim.point(table, '1')
+        
         pix=tim.load()
         w,h=tim.size
         for i in range(h/4):
             for j in range(w/10):
                 pix[j,i]=1
-        
         #tim.show()
         tim.save('final.jpg')
+        #tim.save(prefix+'.number.jpg')
         #print image_to_string(tim)
         ret=ocr('final.jpg')
         print ret
@@ -135,11 +146,39 @@ def readDir(dir,count=-1):
         suf=os.path.splitext(path)[1].lower()
         if suf=='.jpg' or suf=='.png':
             ret=readImage(path)
-            ret=ret.replace(' ',',').strip('\n')
+            ret=ret.replace(' ',',',1)
+            ret=ret.replace(' ','')
+            ret=ret.strip('\n')
             print >>fout,`id`+','+ret+','+f
             count=count-1
             id=id+1
+
+def printImage(filename):
+    im = Image.open(filename)
+    im=im.rotate(270)#TODO
+    prefix=os.path.splitext(filename)[0]
+    print prefix
+    w,h=im.size
+    #if div>1: im=im.resize((w/div, h/div),Image.ANTIALIAS)
+    w,h=im.size
+    #region = (w/6,h/3,w-1,h*3/4)
+    #im=im.crop(region)
+    
+    Lim = im.convert('L')
+    Lim.save('fun_gray.jpg')
+    pix=Lim.load()
+    f=codecs.open("debug.txt", "w", 'utf-8')
+    for i in range(h):
+        line=''
+        for j in range(w):
+            line=line+`pix[j,i]`+' '
+        print >>f,line
+    f.close()
+
+#printImage('votes/IMG_6175.JPG')
     
 #main
-#readImage('votes/IMG_6175.JPG')
-readDir('votes')
+readImage('votes/IMG_6177.JPG')
+#readImage('votes2/IMG_20160315_230347.JPG')
+#readDir('votes2')
+#printImage('votes/IMG_6173.JPG')
