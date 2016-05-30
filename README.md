@@ -12,8 +12,9 @@ Note: please modify the variable cmd in main.cpp if you use a different command 
 
 ## Install tesseract
 
-For windows: see https://github.com/tesseract-ocr/tesseract/wiki
-You may need to download an extra .traineddata file. See https://github.com/tesseract-ocr/tesseract/wiki.
+For windows: see https://github.com/tesseract-ocr/tesseract/wiki .
+
+You may need to download an extra .traineddata file.
 
     
 For Linux (Ubuntu):
