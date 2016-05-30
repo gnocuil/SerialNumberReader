@@ -15,12 +15,12 @@ For Linux (Ubuntu):
 
 
 Usage
-1. Scan one jpg file:
+1. Scan one jpg/png file:
     python image.py -i input.jpg
 
 The result will be printed to screen directly.
 
-2. Scan all jpg files in a directory:
+2. Scan all jpg/png files in a directory:
     python image.py -f input_directory
 
 The result will be saved to <input_directory/serial.csv>.

@@ -63,7 +63,7 @@ def readImage(filename):
     im=im.crop(region)
     
     Lim = im.convert('L')
-    Lim.save('fun_gray.jpg')
+    Lim.save('debug_step1_gray.jpg')
     
     table = []
     for i in range(256):
@@ -73,7 +73,7 @@ def readImage(filename):
             table.append(1)
 
     bim = Lim.point(table, '1')
-    bim.save('fun_binary.jpg')
+    bim.save('debug_step2_binary.jpg')
     #return ''
     #f=codecs.open("debug.txt", "w", 'utf-8')
     w,h=bim.size
@@ -117,6 +117,13 @@ def readImage(filename):
                     w2=ymax
                     h1=xmin
                     h2=xmax
+                    i1=h1
+                    while i1<=h2:
+                        j1=w1
+                        while j1<=w2:
+                            pix[j1,i1]=1
+                            j1=j1+1
+                        i1=i1+1
     print best,w1,w2,h1,h2
     #f.close()
     #bim = Lim.point(table, '1')
@@ -136,10 +143,10 @@ def readImage(filename):
             for j in range(w/10):
                 pix[j,i]=1
         #tim.show()
-        tim.save('final.jpg')
+        tim.save('debug_step3_number.jpg')
         #tim.save(prefix+'.number.jpg')
         #print image_to_string(tim)
-        ret=ocr('final.jpg')
+        ret=ocr('debug_step3_number.jpg')
         print ret
         return ret
     else:
@@ -161,6 +168,7 @@ def readDir(dir,count=-1):
             ret=ret.replace(' ',',',1)
             ret=ret.replace(' ','')
             ret=ret.strip('\n')
+            if len(ret)!=17: ret='FAIL,FAIL'
             print >>fout,`id`+','+ret+','+f
             count=count-1
             id=id+1
@@ -197,11 +205,11 @@ def usage():
 if len(sys.argv)==3:
     if sys.argv[1]=='-i':
         filename=sys.argv[2]
-        print 'Process input jpg file: %s'%filename
+        print 'Process input jpg/png file: %s'%filename
         readImage(filename)
     elif sys.argv[1]=='-f':
         path=sys.argv[2]
-        print 'Process all jpg files in input directory: %s'%path
+        print 'Process all jpg/png files in input directory: %s'%path
         readDir(path)
     else:
         usage()
