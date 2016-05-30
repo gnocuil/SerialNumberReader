@@ -28,4 +28,4 @@ The result will be printed to screen directly.
 
     python image.py -f input_directory
 
-The result will be saved to <input_directory/serial.csv>.
+The result will be saved to input_directory/serial.csv.
