@@ -24,13 +24,13 @@ For Linux (Ubuntu):
 
 #Usage
 
-## Scan one jpg file:
+## Scan one jpg/png file:
 
     ./image -i input.jpg
 
 The result will be printed to screen directly.
 
-## Scan all jpg files in a directory:
+## Scan all jpg/png files in a directory:
 
     ./image -f input_directory
 
