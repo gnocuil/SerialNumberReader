@@ -31,12 +31,12 @@ int threshold = 0;
 
 const string cmd = "tesseract";
 const string args = "out -psm 7 pattern.txt 2>/dev/null";
-const string finalname = "final.jpg";
+const string finalname = "debug3_numbers.jpg";
 const string cmd_line = cmd + " " + finalname + " " + args;
 
 //threshold for gray to 2-value
 
-string check()
+string check(bool nocheck=false)
 {
     FILE *fin = fopen("out.txt", "r");
     char line[100];
@@ -45,6 +45,11 @@ string check()
         int cnt = 0;
         string ret = "";
         int len = strlen(line);
+        if (nocheck) {
+            for (int i = 0; i < len; ++i)
+                if (isalnum(line[i])) ret+=line[i];
+            return ret;
+        }
         for (int i = 0; i < len; ++i) {
             if (isalnum(line[i])) {
                 ret+=line[i];
@@ -63,6 +68,10 @@ string check()
         }
         return ret;
     }
+    return "";
+}
+
+string split() {
     return "";
 }
 
@@ -87,7 +96,7 @@ string doit2(int w, int h, int threshold, const CImg<unsigned char>& img)
             bimg(j,i,2)=v;
         }
     }
-   	bimg.save("binary.jpg");
+   	bimg.save("debug1_binary.jpg");
 	
 	int tot = 0;
 	double best = 0;
@@ -133,7 +142,7 @@ string doit2(int w, int h, int threshold, const CImg<unsigned char>& img)
 	        CImg<unsigned char> img2(bimg);
 	        img2.crop(w1,h1,0,0,w2,h2,0,2);
 	        char tt[100]={0};
-	        sprintf(tt,"part_%d.jpg", tot++);
+	        sprintf(tt,"debug2_part_%d.jpg", tot++);
         	img2.save(tt);
 	        //img2.display(tt);
 	    }
@@ -158,7 +167,69 @@ string doit2(int w, int h, int threshold, const CImg<unsigned char>& img)
         system(cmd_line.c_str());
         string ret = check();
         if (ret.size()==0) {
-            printf("        OCR failed...\n");
+            printf("        OCR failed... try spliting\n");
+            //return split();
+            int cnt = 0;
+            int j = 0;
+            int j1, j2;
+            int status=0;
+            while (j<=w) {
+                bool empty = true;
+                if (j<w) {
+                    for (int i = 0; i < h; ++i) {
+//                        printf("%d %d %d\n",j,i,(int)img2(j,i,0));
+                        if (img2(j,i,0)<128) {
+                            empty=false;
+                            break;
+                        }
+                    }
+                }
+                if (status == 0) {
+                    if (empty) {
+                    } else {
+                        if (cnt==LEN1+LEN2) {
+                            cnt++;
+                            break;
+                        }
+                        j1=j;
+                        status=1;
+                    }
+                } else if (status==1) {
+                    if (not empty) {
+                    } else {
+                        j2=j-1;
+                        CImg<unsigned char> simg = img2.get_crop(j1,0,0,0,j2,h-1,0,2);
+                        char fn[100]={0};
+                        sprintf(fn,"debug4_char_%d.jpg",cnt++);
+                        simg.save(fn);
+
+                        status=0;
+                        j--;
+                    }
+                }
+                j++;
+            }
+            if (cnt==LEN1+LEN2) {
+                string result="";
+                bool fail=false;
+                for (int i = 0; i < cnt; ++i) {
+                    char fn[100]={0};
+                    sprintf(fn,"debug4_char_%d.jpg",i);
+                    string cmdline = cmd + " " + fn + " " + args;
+                    system(cmdline.c_str());
+                    string ret = check(true);
+                    if (ret.size()!=1) {
+                        fail=true;
+                        break;
+                    }
+                    result+=ret;
+                    if (i+1==LEN1) result+=",";
+                }
+                if (!fail)
+                    return result;
+            }
+    	    printf("        splitting fail!\n");
+            return "";
         }
         return ret;
 	} else {
@@ -199,7 +270,7 @@ string doit(string filename)
 	}
 	
 	//image.display("test1");
-	image.save("gray.jpg");
+	image.save("debug0_gray.jpg");
 	
 	string ret = "";
 	if (threshold>0) {
@@ -271,6 +342,8 @@ int main(int argc, char **argv)
         } else if (strcmp(argv[i],"-f")==0 && i+1<argc) {
             ++i;
             folder=argv[i];
+            if (folder.size()>1 && folder[folder.size()-1]=='/')
+                folder.resize(folder.size()-1);
             printf("folder: %s\n", folder.c_str());
         } else if (strcmp(argv[i],"-t")==0 && i+1<argc) {
             ++i;
