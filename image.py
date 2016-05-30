@@ -1,15 +1,23 @@
-import Image, ImageFilter
+import Image
+import ImageFilter
 import codecs
 import Queue
 import string,os,sys
 import subprocess
 
-#threshold = 160 #ios
-threshold = 110 #android
+#For windows
+#tesseract_path='C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe'
+
+#For Linux
+tesseract_path='tesseract'
+
+rotate_degree=270
+threshold = 160 #ios
+#threshold = 110 #android
 dx=[0,1,0,-1]
 dy=[1,0,-1,0]
-exe='C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe'
 div=2
+
 
 def roll(image, delta):
     xsize, ysize = image.size
@@ -25,10 +33,14 @@ def roll(image, delta):
     return image
 
 def ocr(filename):
-    print exe
-    args = [exe, filename, 'out','-psm 7', 'pattern.txt']
+    #print tesseract_path
+    args = [tesseract_path, filename, 'out','-psm 7', 'pattern.txt']
     FNULL = open(os.devnull, 'w')
-    proc = subprocess.Popen(args,stdout=FNULL, stderr=subprocess.STDOUT)
+    try:
+        proc = subprocess.Popen(args,stdout=FNULL, stderr=subprocess.STDOUT)
+    except:
+        print "Failed to run tesseract. Please check if tesseract_path is correct."
+        quit()
     retcode = proc.wait()
     FNULL.close()
     if retcode!=0:
@@ -43,7 +55,7 @@ def readImage(filename):
     print prefix
     w,h=im.size
     if w>h:
-        im=im.rotate(270)#TODO
+        im=im.rotate(rotate_degree)
     w,h=im.size
     if div>1: im=im.resize((w/div, h/div),Image.ANTIALIAS)
     w,h=im.size
@@ -155,7 +167,7 @@ def readDir(dir,count=-1):
 
 def printImage(filename):
     im = Image.open(filename)
-    im=im.rotate(270)#TODO
+    im=im.rotate(rotate_degree)
     prefix=os.path.splitext(filename)[0]
     print prefix
     w,h=im.size
@@ -176,9 +188,28 @@ def printImage(filename):
     f.close()
 
 #printImage('votes/IMG_6175.JPG')
+
+def usage():
+    print 'Usage: python image.py -i input.jpg'
+    print '       python image.py -f input_directory'
     
 #main
-readImage('votes/IMG_6177.JPG')
+if len(sys.argv)==3:
+    if sys.argv[1]=='-i':
+        filename=sys.argv[2]
+        print 'Process input jpg file: %s'%filename
+        readImage(filename)
+    elif sys.argv[1]=='-f':
+        path=sys.argv[2]
+        print 'Process all jpg files in input directory: %s'%path
+        readDir(path)
+    else:
+        usage()
+else:
+    usage()
+    
+
+#readImage('votes/IMG_6177.JPG')
 #readImage('votes2/IMG_20160315_230347.JPG')
 #readDir('votes2')
 #printImage('votes/IMG_6173.JPG')
